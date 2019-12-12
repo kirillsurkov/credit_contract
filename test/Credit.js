@@ -4,7 +4,7 @@ const gasPrice = new BigNumber("2000000000");
 
 contract("Credit", async accounts => {
 	async function delegate_args(contract, signer, method, args) {
-		let data = contract.address + contract.contract.methods[method].apply(null, args).encodeABI().slice(2);
+		let data = contract.address + signer.slice(2) + contract.contract.methods[method].apply(null, args).encodeABI().slice(2);
 		let signature = (await web3.eth.sign(web3.utils.sha3(data), signer)).slice(2);
 		let r = "0x" + signature.slice(0, 64);
 		let s = "0x" + signature.slice(64, 128);

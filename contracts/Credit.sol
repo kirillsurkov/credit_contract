@@ -49,11 +49,16 @@ contract Credit {
         delete requests[id];
     }
     
-    function extract_sender(bytes memory data, uint8 v, bytes32 r, bytes32 s) private view returns (address payable sender) {
+    function extract_sender(bytes memory data, uint8 v, bytes32 r, bytes32 s) private view returns (address payable signer) {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 hash = keccak256(abi.encodePacked(prefix, keccak256(data)));
-        sender = address(uint160(ecrecover(hash, v, r, s)));
-        require(sender != address(0));
+        signer = address(uint160(ecrecover(hash, v, r, s)));
+
+        address _signer;
+        assembly {
+            _signer := mload(add(data, add(20, 20)))
+        }
+        require(signer == _signer);
         
         address _this;
         assembly {
@@ -61,14 +66,14 @@ contract Credit {
         }
         require(_this == address(this));
         
-        return sender;
+        return signer;
     }
 
     function user_request_delegated(bytes memory data, uint8 v, bytes32 r, bytes32 s) public {
         address payable sender = extract_sender(data, v, r, s);
         uint256 amount;
         assembly {
-            amount := mload(add(data, add(32, 24)))
+            amount := mload(add(data, add(32, 44)))
         }
         _user_request(sender, amount);
     }
@@ -77,7 +82,7 @@ contract Credit {
         address payable sender = extract_sender(data, v, r, s);
         uint256 id;
         assembly {
-            id := mload(add(data, add(32, 24)))
+            id := mload(add(data, add(32, 44)))
         }
         _user_take(sender, id);
     }
@@ -86,7 +91,7 @@ contract Credit {
         address payable sender = extract_sender(data, v, r, s);
         uint256 id;
         assembly {
-            id := mload(add(data, add(32, 24)))
+            id := mload(add(data, add(32, 44)))
         }
         _user_deny(sender, id);
     }
